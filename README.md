@@ -1,0 +1,3 @@
+# README #
+
+Sync redux state
