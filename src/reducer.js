@@ -6,10 +6,18 @@ import {
 } from './const.js';
 
 // reducer
-export default function syncStateEngineReducer(reducer, syncStateEngine) {
-  const { stateSerializer } = syncStateEngine;
+export default function syncStateEngineReducer(reducer, syncStateEngine, syncStateKey = null) {
+  const {
+    stateSerializer,
+    shouldApplyDifference,
+    selectSyncState,
+  } = syncStateEngine;
 
   return (state, action) => {
+    // Due to the nature of combineReducer to create new state only based on defined reducers,
+    // every other key of static data will not be moved to new state instance. Sync state engine
+    // allow syncing state without knowledge of reducers and thus needs to keep those missing
+    // keys. Assumption is that case is only valid for root keys.
     if (action.type !== SYNC_STATE) {
       const newState = reducer(state, action);
 
@@ -25,28 +33,22 @@ export default function syncStateEngineReducer(reducer, syncStateEngine) {
       };
     }
 
-    /*const source = getStatusProp(action, 'source');
-    const { id: sourceId, ownExtensionName } = source;
-    if (!sourceId || sourceId === 'builder') {
-      return state;
-    }*/
+    const source = getStatusProp(action, 'source');
 
     const { payload: serializedDifferences } = action;
     const differences = stateSerializer.deserialize(serializedDifferences);
 
-    /*const ownExtensionState = state[ownExtensionName] || {};
-    const newOwnExtensionState = fromSerializableFormat(toSerializableFormat(ownExtensionState));
+    const stateToSync = selectSyncState(state, source);
+    const newStateToSync = stateSerializer.deserialize(stateSerializer.serialize(stateToSync));
     const newState = {
       ...state,
-      [ownExtensionName]: newOwnExtensionState,
-    };*/
-    const newState = stateSerializer.deserialize(stateSerializer.serialize((state)));
+      ...newStateToSync,
+    };
 
     _.forEach(_.reverse(differences), difference => {
-      /*const extensionPath = _.get(difference, 'path.0');
-      if (extensionPath !== ownExtensionName) {
+      if (!shouldApplyDifference(difference, source)) {
         return;
-      }*/
+      }
 
       diff.applyChange(newState, {}, difference);
     });

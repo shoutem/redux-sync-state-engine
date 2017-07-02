@@ -22,10 +22,14 @@ export default class SyncStateEngine {
     const {
       syncActionFilter,
       stateSerializer,
+      shouldApplyDifference,
+      selectSyncState,
     } = config;
 
     this.syncActionFilter = syncActionFilter || new DefaultSyncActionFilter();
     this.stateSerializer = stateSerializer || new DefaultStateSerializer();
+    this.shouldApplyDifference = shouldApplyDifference || (() => true);
+    this.selectSyncState = selectSyncState || _.identity;
   }
 
   subscribeToActionsSync(subscriber) {
