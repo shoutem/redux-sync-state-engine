@@ -8,7 +8,7 @@ export { SyncStateEngine };
 
 export {
   DefaultSyncActionFilter,
-  DefaultStateSerializer,
+  DefaultSyncActionSanitizer,
 } from './services';
 
 import middleware from './middleware';

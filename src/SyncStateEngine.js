@@ -3,63 +3,73 @@ import _ from 'lodash';
 import {
   SYNC_STATE,
   SYNC_ACTION,
+  METADATA,
 } from './const.js';
-import { setStatus } from './status';
+import { setMetadata, getMetadataProp } from './services/metadata';
 import {
-  DefaultSyncActionFilter,
+  DefaultSyncActionSanitizer,
   DefaultStateSerializer,
 } from './services';
 
 export default class SyncStateEngine {
   constructor(config = {}) {
-    this.subscribeToActionsSync = this.subscribeToActionsSync.bind(this);
-    this.unsubscribeToActionsSync = this.unsubscribeToActionsSync.bind(this);
-    this.getActionsSyncSubscribers = this.getActionsSyncSubscribers.bind(this);
+    this.subscribeToActions = this.subscribeToActions.bind(this);
+    this.unsubscribeFromActions = this.unsubscribeFromActions.bind(this);
     this.calculateDifferences = this.calculateDifferences.bind(this);
+    this.processAction = this.processAction.bind(this);
+    this.processExternalChange = this.processExternalChange.bind(this);
+    this.getActionSource = this.getActionSource.bind(this);
+    this.setActionSource = this.setActionSource.bind(this);
 
-    this.actionSyncSubscribers = [];
+    this.actionsSubscribers = [];
 
     const {
-      syncActionFilter,
+      syncActionSanitizer,
       stateSerializer,
       shouldApplyDifference,
       selectSyncState,
     } = config;
 
-    this.syncActionFilter = syncActionFilter || new DefaultSyncActionFilter();
+    this.syncActionSanitizer = syncActionSanitizer || new DefaultSyncActionSanitizer();
     this.stateSerializer = stateSerializer || new DefaultStateSerializer();
     this.shouldApplyDifference = shouldApplyDifference || (() => true);
     this.selectSyncState = selectSyncState || _.identity;
   }
 
-  subscribeToActionsSync(subscriber) {
-    this.actionSyncSubscribers.push(subscriber);
+  subscribeToActions(subscriber) {
+    this.actionsSubscribers.push(subscriber);
   }
 
-  unsubscribeToActionsSync(subscriber) {
-    const index = _.indexOf(this.actionSyncSubscribers, subscriber);
-
-    if (index >= 0) {
-      this.actionSyncSubscribers.splice(index, 1);
-    }
+  unsubscribeFromActions(subscriber) {
+    _.remove(this.actionsSubscribers, s => s === subscriber);
   }
 
-  getActionsSyncSubscribers() {
-    return this.actionSyncSubscribers;
-  }
-
-  calculateDifferences(state = {}, nextState = {}, pathScope) {
+  /**
+   * Calculates differences between two instances of state. Differences are described in array
+   * containing each description of difference between instances. PathScope allows to scope
+   * search for differences to a key in root level.
+   * @param state previous instance of state
+   * @param nextState current instance of state
+   * @param pathScope scope diff search to property on root state level
+   * @returns {*} Sync action
+   */
+  calculateDifferences(state = {}, nextState = {}, pathScope = null) {
     if (state === nextState) {
       return null;
     }
 
-    const differences = diff(state, nextState, (d, k) => {
-      if (_.isEmpty(d) && k === pathScope) {
+    // calculate differences only for allowed paths
+    const differences = diff(state, nextState, (path, key) => {
+      if (!pathScope) {
         return false;
       }
-      if (d[0] === pathScope) {
+      if (_.isEmpty(path) && key === pathScope) {
         return false;
       }
+      if (path[0] === pathScope) {
+        return false;
+      }
+
       return true;
     });
 
@@ -71,35 +81,60 @@ export default class SyncStateEngine {
     return [SYNC_STATE, serializedDifferences];
   }
 
-  processExternalSync(message, source) {
+  processAction(action) {
+    const sanitizedAction = this.syncActionSanitizer.sanitizeOutbound(action);
+    if (!sanitizedAction) {
+      return;
+    }
+
+    const syncAction = [SYNC_ACTION, sanitizedAction];
+    const source = this.getActionSource(action);
+    this.actionsSubscribers.forEach((subscriber) => (
+      subscriber(syncAction, source)
+    ));
+  }
+
+  processExternalChange(message, source) {
     switch (message.type) {
       case SYNC_ACTION: {
-        const actionToSync = message.payload;
+        const syncAction = message.payload;
 
-        const filteredActionToSync = this.syncActionFilter.filterInbound(actionToSync);
-        if (!filteredActionToSync) {
+        const sanitizedAction = this.syncActionSanitizer.sanitizeInbound(syncAction);
+        if (!sanitizedAction) {
           return null;
         }
 
-        setStatus(filteredActionToSync, {
-          source,
-        });
+        this.setActionSource(sanitizedAction, source);
 
-        console.log('EXT rcv SYNC_ACTION', filteredActionToSync);
-        return filteredActionToSync;
+        console.log('EXT rcv SYNC_ACTION', sanitizedAction);
+        return sanitizedAction;
       }
       case SYNC_STATE: {
-        const stateToSync = message;
+        const syncState = message;
 
-        setStatus(stateToSync, {
-          source,
-        });
+        this.setActionSource(syncState, source);
 
-        console.log('EXT rcv SYNC_STATE', stateToSync);
-        return stateToSync;
+        console.log('EXT rcv SYNC_STATE', syncState);
+        return syncState;
       }
       default:
         return null;
     }
+  }
+
+  getActionSource(action) {
+    return getMetadataProp(action, 'source', METADATA);
+  }
+
+  setActionSource(action, source) {
+    const metadata = {
+      source,
+    };
+
+    setMetadata(
+      action,
+      metadata,
+      METADATA,
+    );
   }
 }

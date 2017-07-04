@@ -1,16 +1,15 @@
 import _ from 'lodash';
 import diff from 'deep-diff';
-import { getStatusProp } from './status';
 import {
   SYNC_STATE,
 } from './const.js';
 
-// reducer
-export default function syncStateEngineReducer(reducer, syncStateEngine, syncStateKey = null) {
+export default function syncStateEngineReducer(reducer, syncStateEngine) {
   const {
     stateSerializer,
     shouldApplyDifference,
     selectSyncState,
+    getActionSource,
   } = syncStateEngine;
 
   return (state, action) => {
@@ -33,7 +32,7 @@ export default function syncStateEngineReducer(reducer, syncStateEngine, syncSta
       };
     }
 
-    const source = getStatusProp(action, 'source');
+    const source = getActionSource(action);
 
     const { payload: serializedDifferences } = action;
     const differences = stateSerializer.deserialize(serializedDifferences);

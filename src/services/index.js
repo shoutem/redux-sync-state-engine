@@ -1,5 +1,5 @@
-import DefaultSyncActionFilter from './DefaultSyncActionFilter';
-export { DefaultSyncActionFilter };
+import DefaultSyncActionSanitizer from './DefaultSyncActionSanitizer';
+export { DefaultSyncActionSanitizer };
 
 import DefaultStateSerializer from './DefaultStateSerializer';
 export { DefaultStateSerializer };
