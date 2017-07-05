@@ -50,7 +50,8 @@ export default class SyncStateEngine {
    * search for differences to a key in root level.
    * @param state previous instance of state
    * @param nextState current instance of state
-   * @param pathScope scope diff search to property on root state level
+   * @param pathScope defines root state property key that will bound search for differences only
+   * to content under such key, otherwise default behaviour is search for diff in whole state
    * @returns {*} Sync action
    */
   calculateDifferences(state = {}, nextState = {}, pathScope = null) {
