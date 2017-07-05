@@ -14,5 +14,5 @@ export {
 import middleware from './middleware';
 export { middleware as syncStateEngineMiddleware };
 
-import syncStateEngineReducer from './reducer';
-export { syncStateEngineReducer };
+import enableStateSync from './reducer';
+export { enableStateSync };

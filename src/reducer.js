@@ -4,7 +4,7 @@ import {
   SYNC_STATE,
 } from './const.js';
 
-export default function syncStateEngineReducer(reducer, syncStateEngine) {
+export default function enableStateSync(reducer, syncStateEngine) {
   const {
     stateSerializer,
     shouldApplyDifference,

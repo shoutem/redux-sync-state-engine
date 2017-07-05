@@ -105,16 +105,11 @@ export default class SyncStateEngine {
         }
 
         this.setActionSource(sanitizedAction, source);
-
-        console.log('EXT rcv SYNC_ACTION', sanitizedAction);
         return sanitizedAction;
       }
       case SYNC_STATE: {
         const syncState = message;
-
         this.setActionSource(syncState, source);
-
-        console.log('EXT rcv SYNC_STATE', syncState);
         return syncState;
       }
       default:
