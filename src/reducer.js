@@ -24,6 +24,10 @@ export default function enableStateSync(reducer, syncStateEngine) {
       const newStateKeys = _.keys(newState);
 
       const missingKeys = _.difference(stateKeys, newStateKeys);
+      if (_.isEmpty(missingKeys)) {
+        return newState;
+      }
+
       const missingState = _.pick(state, missingKeys);
 
       return {
