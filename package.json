@@ -1,6 +1,6 @@
 {
   "name": "@shoutem/redux-sync-state-engine",
-  "version": "0.0.3-rc.0",
+  "version": "0.0.3",
   "description": "Sync multiple redux stores",
   "main": "build/lib/index.js",
   "files": [
