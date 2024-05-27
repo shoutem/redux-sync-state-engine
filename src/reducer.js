@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import diff from 'deep-diff';
+import diff from '@shoutem/deep-diff';
 import {
   SYNC_STATE,
 } from './const.js';
