@@ -1,6 +1,6 @@
 {
   "name": "@shoutem/redux-sync-state-engine",
-  "version": "0.0.4-rc.o",
+  "version": "0.0.4",
   "description": "Sync multiple redux stores",
   "main": "build/lib/index.js",
   "files": [
@@ -45,7 +45,7 @@
     "sinon": "^1.17.4"
   },
   "dependencies": {
-    "@shoutem/deep-diff": "^1.0.0-rc.0",
+    "@shoutem/deep-diff": "^1.0.0",
     "lodash": "^4.17.4"
   }
 }
